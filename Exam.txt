@@ -1,0 +1,231 @@
+```
+
+using System;
+using System.Collections.Generic;
+public class student
+{
+    public string student_name, id;
+    public student(string name, string id)
+    {
+        this.student_name = name;
+        this.id = id;
+    }
+    private int right_ans = 0;
+    private int wrong_ans = 0;
+    private double score = 0;
+    public int attempted_questions = 0;
+    public void increment_right()
+    {
+        right_ans++;
+        score += 1;
+    }
+    public void increment_wrong()
+    {
+        wrong_ans++;
+        score -= 0.25;
+    }
+    public int correct_answers()
+    {
+        return right_ans;
+    }
+    public int wrong_answers()
+    {
+        return wrong_ans;
+    }
+    public double total_score()
+    {
+        return score;
+    }
+};
+public class question
+{
+    public int original_ans;
+    public string question_text;
+    public bool validate_question(int student_answer)
+    {
+        return (original_ans == student_answer);
+    }
+};
+
+class test
+{
+    static int ques_no=1;
+    public static void add_question_to_file(string path, int ans,ref question q)
+    {
+        String ques;
+        Console.WriteLine("enter the question");
+        ques = Console.ReadLine();
+        q.question_text = ques;
+        try
+        {
+            
+            using (System.IO.StreamWriter file = new System.IO.StreamWriter(@path, true))
+            {
+                file.WriteLine(ques_no+") "+ques + " answer is " + ans);
+                ques_no++;
+            }
+        }
+        catch (Exception e)
+        {
+            throw new ApplicationException("Exception", e);
+        }
+    }
+    public static void questions_for_students_file(string path, HashSet<int> h, question[] q, student s)
+    {
+        try
+        {
+            using (System.IO.StreamWriter file = new System.IO.StreamWriter(@path, true))
+            {
+                file.WriteLine(s.student_name + " " + s.id);
+                int q_no = 1;
+                foreach (var i in h)
+                {
+                    file.WriteLine(q_no + ") " + q[i].question_text);
+                    q_no++;
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            throw new ApplicationException("Exception", e);
+        }
+    }
+    public static void results(string path, student s)
+    {
+        try
+        {
+            using (System.IO.StreamWriter file = new System.IO.StreamWriter(@path, true))
+            {
+                file.WriteLine(s.student_name + "    " + s.id + "   "+s.attempted_questions+"  "+ s.correct_answers() + "   " + s.wrong_answers() + "   " + s.total_score());
+            }
+        }
+        catch (Exception e)
+        {
+            throw new ApplicationException("Exception", e);
+        }
+    }
+    public static void studentdetails_file(string path,student s)
+    {
+        try
+        {
+
+            using (System.IO.StreamWriter file = new System.IO.StreamWriter(@path, true))
+            {
+                file.WriteLine(s.student_name + "  " + s.id);
+            }
+        }
+        catch (Exception e)
+        {
+            throw new ApplicationException("Exception", e);
+        }
+    }
+    public static void generate_questions(ref HashSet<int> questions_for_this_student)
+    {
+        Random r = new Random();
+        while (questions_for_this_student.Count < 10)
+        {
+            questions_for_this_student.Add(r.Next(0, 20));
+        }
+    }
+    static int takeinput()
+    {
+        string ans1;
+        Console.WriteLine("do you want to attempt this question yes/no");
+        ans1 = Console.ReadLine();
+        if (ans1 == "no")
+        {
+            return -2;
+        }
+        int ans;
+        Console.WriteLine("Enter a valid answer from 1 to 4");
+        ans = Convert.ToInt32(Console.ReadLine());
+        while (ans != 1 && ans != 2 && ans != 3 && ans != 4)
+        {
+            Console.WriteLine("Not a valid Input ,Enter options only between 1 and 4");
+            ans = Convert.ToInt32(Console.ReadLine());
+        }
+        return ans;
+    }
+    static void Main()
+    {
+        int no_of_students;
+        Random r = new Random();
+
+        Console.WriteLine("Enter the number of students");
+        no_of_students = Convert.ToInt32(Console.ReadLine());
+
+
+        student[] s = new student[no_of_students];
+
+        question[] q = new question[20];
+        for (int i = 0; i < 20; i++)
+        {
+            q[i] = new question();
+            q[i].original_ans = r.Next(1, 5);
+           add_question_to_file(@"C:\Users\Madhurya\Desktop\c sharp\questions.txt",q[i].original_ans,ref q[i]);
+        }
+
+        Dictionary<string, string> student_ids = new Dictionary<string, string>();
+
+        for (int i = 0; i < no_of_students; i++)
+        {
+            Console.WriteLine("Enter student name");
+            string name = Console.ReadLine();
+            Console.WriteLine("Enter student id");
+            string id = Console.ReadLine();
+            if (student_ids.ContainsKey(id))
+            {
+                if (student_ids[id] != name)
+                {
+                    Console.WriteLine("Activity suspicious!! this user have taken exam with another name previously");
+                }
+                else
+                    Console.WriteLine("This student has already taken exam");
+                i--;
+                continue;
+            }
+            else
+            {
+                student_ids.Add(id, name);
+            }
+            s[i] = new student(name, id);
+
+            studentdetails_file(@"C:\Users\Madhurya\Desktop\c sharp\student_details.txt", s[i]);
+            //generating random 10 questions for student
+            HashSet<int> questions_for_this_student = new HashSet<int>();
+            generate_questions(ref questions_for_this_student);
+            // generates random questions for a student
+
+            int ques_number = 0;
+            questions_for_students_file(@"C:\Users\Madhurya\Desktop\c sharp\questions_for_each_student.txt", questions_for_this_student,q,s[i]);
+            foreach (int j in questions_for_this_student)
+            {
+                // int student_answer=Convert.ToInt32(Console.ReadLine());
+                int student_answer = takeinput();
+                if (student_answer == -2)
+                {
+                    ques_number++;
+                    continue;
+                }
+                Console.WriteLine("you have entered the student " + i + " option for the question " + ques_number);
+                ques_number++;
+                (s[i].attempted_questions)++;
+                if (q[j].validate_question(student_answer) == true)
+                {
+                    s[i].increment_right();
+                }
+                else
+                    s[i].increment_wrong();
+            }
+        }
+
+        Console.WriteLine("Student_name || Id  || Correct_answers || Wrong_answers || Total_score");
+        for (int i = 0; i < no_of_students; i++)
+        {
+            results(@"C:\Users\Madhurya\Desktop\c sharp\results.txt", s[i]);
+            Console.WriteLine(s[i].student_name + "    " + s[i].id + "   " + s[i].correct_answers() + "   " + s[i].wrong_answers() + "   " + s[i].total_score());
+        }
+    }
+};
+
+```
